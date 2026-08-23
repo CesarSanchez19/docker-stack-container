@@ -1,0 +1,196 @@
+services:
+
+  # ---------- PostgreSQL ----------
+  postgres:
+    image: postgres:18
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${ADMIN_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5444}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./stack/init-scripts/postgres:/docker-entrypoint-initdb.d
+    networks:
+      - dev_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ---------- MySQL ----------
+  mysql:
+    image: mysql:8
+    container_name: mysql_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    ports:
+      - "${MYSQL_PORT:-3318}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./stack/init-scripts/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - dev_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "--silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ---------- MongoDB ----------
+  mongo:
+    image: mongo:8
+    container_name: mongo_db
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    ports:
+      - "${MONGO_PORT:-27029}:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./stack/init-scripts/mongo:/docker-entrypoint-initdb.d
+    networks:
+      - dev_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ---------- pgAdmin (interfaz web para PostgreSQL) ----------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin_ui
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${ADMIN_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT:-8093}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ---------- Ubuntu LTS ----------
+  ubuntu:
+    image: ubuntu:24.04
+    container_name: ubuntu_dev
+    restart: unless-stopped
+    environment:
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - ./stack/init-scripts/ubuntu:/docker-entrypoint.d:ro
+    entrypoint: ["/bin/bash", "/docker-entrypoint.d/01-init.sh"]
+    command: ["tail", "-f", "/dev/null"]
+    stdin_open: true
+    tty: true
+    networks:
+      - dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ---------- Kali Linux ----------
+  kali:
+    image: kalilinux/kali-rolling
+    container_name: kali_dev
+    restart: unless-stopped
+    environment:
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - ./stack/init-scripts/kali:/docker-entrypoint.d:ro
+    entrypoint: ["/bin/bash", "/docker-entrypoint.d/01-init.sh"]
+    command: ["tail", "-f", "/dev/null"]
+    stdin_open: true
+    tty: true
+    networks:
+      - dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+volumes:
+  postgres_data:
+  mysql_data:
+  mongo_data:
+  pgadmin_data:
+
+networks:
+  dev_network:
+    driver: bridge

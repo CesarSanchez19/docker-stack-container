@@ -1,0 +1,7 @@
+# Forzar line endings LF en scripts de inicialización de contenedores.
+# Los archivos .sh montados desde Windows en contenedores Linux fallan
+# con CRLF (error: /bin/bash^M: bad interpreter).
+*.sh text eol=lf
+
+# Scripts JS ejecutados por mongosh dentro de contenedores Linux
+*.js text eol=lf
