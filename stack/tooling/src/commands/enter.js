@@ -1,33 +1,63 @@
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import chalk from 'chalk';
 import { stackConfig } from '../config/index.js';
-import { findContainer } from '../utils/constants.js';
+import { findContainer, STACK_CONTAINERS } from '../utils/constants.js';
 import { isContainerRunning } from '../utils/prompt.js';
+import { containerExists } from '../services/container.service.js';
+import { isDockerAvailable } from '../infrastructure/docker-client.js';
+import { logger } from '../utils/logger.js';
 
 const targetContainer = process.argv[2];
 
 if (!targetContainer) {
-  console.error(chalk.red('✖ Error: Debes especificar el contenedor al que deseas ingresar.'));
-  console.error(chalk.dim('  Ejemplo: pnpm run enter:postgres'));
-  console.error(chalk.dim('  Disponibles: postgres_db, mysql_db, mongo_db, ubuntu_dev, kali_dev'));
+  logger.error('Debes especificar el contenedor al que deseas ingresar.');
+  logger.info('Ejemplo: pnpm run enter:postgres');
+  logger.info(
+    `Disponibles: ${Object.values(STACK_CONTAINERS).map((c) => c.name).join(', ')}`,
+  );
+  process.exit(1);
+}
+
+if (!(await isDockerAvailable())) {
+  logger.error('No se pudo conectar con Docker.');
+  logger.info('Verifica que Docker Desktop esté en ejecución.');
   process.exit(1);
 }
 
 const container = findContainer(targetContainer);
 if (!container) {
-  console.error(chalk.red(`✖ Error: Contenedor '${targetContainer}' no encontrado en la configuración.`));
+  logger.error(`Contenedor '${targetContainer}' no encontrado en la configuración.`);
+  logger.info(
+    `Disponibles: ${Object.values(STACK_CONTAINERS).map((c) => c.name).join(', ')}`,
+  );
   process.exit(1);
 }
 
 if (!stackConfig.adminUser) {
-  console.error(chalk.red(`\n[ERROR] ✖ Falta configuración en el .env:\nDebe existir la variable 'ADMIN_USER' para poder iniciar sesión.\n`));
+  logger.error('Falta la variable ADMIN_USER en el archivo .env.');
+  logger.info('Define ADMIN_USER en tu archivo .env para poder iniciar sesión.');
   process.exit(1);
+}
+
+if (!(await containerExists(container.name))) {
+  logger.warn(`El contenedor ${container.displayName} (${container.name}) no existe. Creándolo con docker compose...`);
+  try {
+    execSync(`docker compose up -d ${container.service}`, {
+      stdio: 'inherit',
+      cwd: process.cwd(),
+    });
+    logger.success(`${container.displayName} creado e iniciado.`);
+  } catch (error) {
+    logger.error(`Error al crear ${container.displayName}: ${error.message}`);
+    process.exit(1);
+  }
 }
 
 const running = await isContainerRunning(container.name);
 if (!running) {
-  console.error(chalk.red(`\n✖ Error: El contenedor '${container.displayName}' (${container.name}) no está encendido.`));
-  console.error(chalk.yellow(`  Inicia el contenedor primero con: pnpm run start ${container.name}`));
+  const key = Object.keys(STACK_CONTAINERS).find((k) => STACK_CONTAINERS[k].name === container.name);
+  logger.error(`El contenedor ${container.displayName} (${container.name}) no está encendido.`);
+  logger.info(`Inicia el contenedor primero con: pnpm run start:${key || container.name}`);
   process.exit(1);
 }
 
@@ -48,7 +78,7 @@ switch (container.name) {
   case 'mysql_db':
     args.push('mysql', '-u', stackConfig.adminUser);
     if (stackConfig.adminPassword) {
-      args.push(`-p${stackConfig.adminPassword}`);
+      env.MYSQL_PWD = stackConfig.adminPassword;
     } else {
       args.push('-p');
     }
@@ -66,11 +96,15 @@ switch (container.name) {
 
   case 'ubuntu_dev':
   case 'kali_dev':
+  case 'php_dev':
+  case 'java_dev':
+  case 'python_dev':
+  case 'elixir_dev':
     args.push('su', '-', stackConfig.adminUser);
     break;
 
   default:
-    console.error(chalk.red(`✖ Error: Entrada interactiva no soportada para ${container.name}`));
+    logger.error(`Entrada interactiva no soportada para ${container.displayName} (${container.name}).`);
     process.exit(1);
 }
 
@@ -80,11 +114,11 @@ const child = spawn(command, args, {
 });
 
 child.on('error', (err) => {
-  console.error(chalk.red(`✖ Error al intentar ejecutar el comando de Docker: ${err.message}`));
+  logger.error(`Error al ejecutar el comando de Docker: ${err.message}`);
 });
 
 child.on('exit', (code) => {
   if (code !== 0) {
-    console.log(chalk.yellow(`\n⚠ La sesión finalizó con código ${code}.`));
+    logger.warn(`La sesión finalizó con código ${code}.`);
   }
 });

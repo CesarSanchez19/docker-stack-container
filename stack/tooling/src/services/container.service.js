@@ -28,6 +28,16 @@ export function getContainer(containerName) {
   return docker.getContainer(containerName);
 }
 
+export async function containerExists(containerName) {
+  try {
+    const container = docker.getContainer(containerName);
+    await container.inspect();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function restartContainer(containerName) {
   const container = docker.getContainer(containerName);
   await container.restart();

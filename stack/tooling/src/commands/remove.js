@@ -1,5 +1,5 @@
 import '../config/index.js';
-import { removeContainer } from '../services/container.service.js';
+import { removeContainer, containerExists } from '../services/container.service.js';
 import { STACK_CONTAINERS, findContainer } from '../utils/constants.js';
 import { isDockerAvailable } from '../infrastructure/docker-client.js';
 import { confirmAction } from '../utils/prompt.js';
@@ -10,6 +10,7 @@ async function main() {
 
   if (!(await isDockerAvailable())) {
     logger.error('No se pudo conectar con Docker.');
+    logger.info('Verifica que Docker Desktop esté en ejecución.');
     process.exit(1);
   }
 
@@ -21,6 +22,11 @@ async function main() {
       logger.info(
         `Disponibles: ${Object.values(STACK_CONTAINERS).map((c) => c.name).join(', ')}`,
       );
+      process.exit(1);
+    }
+
+    if (!(await containerExists(def.name))) {
+      logger.error(`El contenedor ${def.displayName} (${def.name}) no existe. No hay nada que eliminar.`);
       process.exit(1);
     }
 
@@ -55,27 +61,30 @@ async function main() {
     logger.title('🗑️ Borrando Todo el Stack');
 
     let failed = 0;
+    let removed = 0;
 
     for (const def of Object.values(STACK_CONTAINERS)) {
+      if (!(await containerExists(def.name))) {
+        logger.info(`${def.displayName} no existe, omitiendo.`);
+        continue;
+      }
+
       try {
         logger.info(`Borrando ${def.displayName}...`);
         await removeContainer(def.name);
         logger.success(`${def.displayName} borrado.`);
+        removed++;
       } catch (error) {
-        logger.error(
-          `Error al borrar ${def.displayName}: ${error.message}`,
-        );
+        logger.error(`Error al borrar ${def.displayName}: ${error.message}`);
         failed++;
       }
     }
 
     logger.blank();
     if (failed === 0) {
-      logger.success('Stack borrado completamente.');
+      logger.success(`Stack borrado completamente (${removed} contenedores eliminados).`);
     } else {
-      logger.warn(
-        `Stack borrado con ${failed} error(es). Revisa los logs.`,
-      );
+      logger.warn(`Stack borrado con ${failed} error(es). Revisa los logs.`);
     }
   }
 }

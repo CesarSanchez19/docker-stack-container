@@ -1,5 +1,5 @@
 import '../config/index.js';
-import { getContainerLogs } from '../services/container.service.js';
+import { getContainerLogs, containerExists } from '../services/container.service.js';
 import { STACK_CONTAINERS, findContainer } from '../utils/constants.js';
 import { isDockerAvailable } from '../infrastructure/docker-client.js';
 import { logger } from '../utils/logger.js';
@@ -11,6 +11,7 @@ async function main() {
 
   if (!(await isDockerAvailable())) {
     logger.error('No se pudo conectar con Docker.');
+    logger.info('Verifica que Docker Desktop esté en ejecución.');
     process.exit(1);
   }
 
@@ -22,6 +23,13 @@ async function main() {
       logger.info(
         `Disponibles: ${Object.values(STACK_CONTAINERS).map((c) => c.name).join(', ')}`,
       );
+      process.exit(1);
+    }
+
+    if (!(await containerExists(def.name))) {
+      logger.error(`El contenedor ${def.displayName} (${def.name}) no existe.`);
+      const key = Object.keys(STACK_CONTAINERS).find((k) => STACK_CONTAINERS[k].name === def.name);
+      logger.info(`Créalo primero con: pnpm run start:${key || def.name}`);
       process.exit(1);
     }
 
@@ -41,6 +49,11 @@ async function main() {
       console.log(
         chalk.bold.yellow(`\n── ${def.displayName} (${def.name}) ──`),
       );
+
+      if (!(await containerExists(def.name))) {
+        logger.info('  (contenedor no existe)');
+        continue;
+      }
 
       try {
         const logs = await getContainerLogs(def.name, 10);
