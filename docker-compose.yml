@@ -1,5 +1,4 @@
 services:
-
   # ---------- PostgreSQL ----------
   postgres:
     image: postgres:18
@@ -87,7 +86,8 @@ services:
     networks:
       - dev_network
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"]
+      test:
+        ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -185,11 +185,132 @@ services:
         limits:
           memory: 2G
 
+  # ---------- PHP 8.3 ----------
+  php:
+    image: php:8.3-cli
+    container_name: php_dev
+    restart: unless-stopped
+    environment:
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - ./stack/init-scripts/php:/docker-entrypoint.d:ro
+      - ${HOST_WORKSPACE:-.}:/workspace
+    entrypoint: ["/bin/bash", "/docker-entrypoint.d/01-init.sh"]
+    command: ["tail", "-f", "/dev/null"]
+    stdin_open: true
+    tty: true
+    networks:
+      - dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ---------- Java 21 (JDK) ----------
+  java:
+    image: eclipse-temurin:21
+    container_name: java_dev
+    restart: unless-stopped
+    environment:
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - ./stack/init-scripts/java:/docker-entrypoint.d:ro
+      - ${HOST_WORKSPACE:-.}:/workspace
+      - java_m2_cache:/home/${ADMIN_USER}/.m2
+    entrypoint: ["/bin/bash", "/docker-entrypoint.d/01-init.sh"]
+    command: ["tail", "-f", "/dev/null"]
+    stdin_open: true
+    tty: true
+    networks:
+      - dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ---------- Python 3.12 ----------
+  python:
+    image: python:3.12-slim
+    container_name: python_dev
+    restart: unless-stopped
+    environment:
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./stack/init-scripts/python:/docker-entrypoint.d:ro
+      - ${HOST_WORKSPACE:-.}:/workspace
+    entrypoint: ["/bin/bash", "/docker-entrypoint.d/01-init.sh"]
+    command: ["tail", "-f", "/dev/null"]
+    stdin_open: true
+    tty: true
+    networks:
+      - dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ---------- Elixir 1.17 (Opcional) ----------
+  elixir:
+    image: elixir:1.17
+    container_name: elixir_dev
+    restart: unless-stopped
+    environment:
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      MIX_ENV: dev
+    volumes:
+      - ./stack/init-scripts/elixir:/docker-entrypoint.d:ro
+      - ${HOST_WORKSPACE:-.}:/workspace
+    entrypoint: ["/bin/bash", "/docker-entrypoint.d/01-init.sh"]
+    command: ["tail", "-f", "/dev/null"]
+    stdin_open: true
+    tty: true
+    networks:
+      - dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
 volumes:
   postgres_data:
   mysql_data:
   mongo_data:
   pgadmin_data:
+  java_m2_cache:
 
 networks:
   dev_network:
