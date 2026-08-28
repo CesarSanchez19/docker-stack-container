@@ -1,15 +1,52 @@
 import '../config/index.js';
-import { startContainer } from '../services/container.service.js';
+import { execSync } from 'node:child_process';
+import { startContainer, containerExists } from '../services/container.service.js';
 import { STACK_CONTAINERS, findContainer } from '../utils/constants.js';
 import { isDockerAvailable } from '../infrastructure/docker-client.js';
 import { isContainerRunning } from '../utils/prompt.js';
 import { logger } from '../utils/logger.js';
+
+function composeUp(serviceName) {
+  execSync(`docker compose up -d ${serviceName}`, {
+    stdio: 'inherit',
+    cwd: process.cwd(),
+  });
+}
+
+async function startSingle(def) {
+  if (await isContainerRunning(def.name)) {
+    logger.info(`El contenedor ${def.displayName} ya se encuentra encendido.`);
+    return 'skipped';
+  }
+
+  if (!(await containerExists(def.name))) {
+    logger.info(`El contenedor ${def.displayName} no existe. Creándolo con docker compose...`);
+    try {
+      composeUp(def.service);
+      logger.success(`${def.displayName} creado e iniciado correctamente.`);
+      return 'started';
+    } catch (error) {
+      logger.error(`Error al crear ${def.displayName}: ${error.message}`);
+      return 'failed';
+    }
+  }
+
+  try {
+    await startContainer(def.name);
+    logger.success(`${def.displayName} iniciado correctamente.`);
+    return 'started';
+  } catch (error) {
+    logger.error(`Error al iniciar ${def.displayName}: ${error.message}`);
+    return 'failed';
+  }
+}
 
 async function main() {
   const targetName = process.argv[2];
 
   if (!(await isDockerAvailable())) {
     logger.error('No se pudo conectar con Docker.');
+    logger.info('Verifica que Docker Desktop esté en ejecución.');
     process.exit(1);
   }
 
@@ -24,18 +61,10 @@ async function main() {
       process.exit(1);
     }
 
-    if (await isContainerRunning(def.name)) {
-      logger.info(`El contenedor ${def.displayName} ya se encuentra encendido.`);
-      process.exit(0);
-    }
-
     logger.title(`🚀 Iniciando ${def.displayName}`);
 
-    try {
-      await startContainer(def.name);
-      logger.success(`${def.displayName} iniciado correctamente.`);
-    } catch (error) {
-      logger.error(`Error al iniciar ${def.displayName}: ${error.message}`);
+    const result = await startSingle(def);
+    if (result === 'failed') {
       process.exit(1);
     }
   } else {
@@ -46,33 +75,19 @@ async function main() {
     let skippedCount = 0;
 
     for (const def of Object.values(STACK_CONTAINERS)) {
-      if (await isContainerRunning(def.name)) {
-        skippedCount++;
-        continue;
-      }
-
-      try {
-        logger.info(`Iniciando ${def.displayName}...`);
-        await startContainer(def.name);
-        logger.success(`${def.displayName} iniciado.`);
-        startedCount++;
-      } catch (error) {
-        logger.error(
-          `Error al iniciar ${def.displayName}: ${error.message}`,
-        );
-        failed++;
-      }
+      const result = await startSingle(def);
+      if (result === 'started') startedCount++;
+      else if (result === 'skipped') skippedCount++;
+      else failed++;
     }
 
     logger.blank();
     if (startedCount === 0 && failed === 0) {
-      logger.info('Todos los contenedores ya se encuentran encendidos. No hay acciones a realizar.');
+      logger.success('Todos los contenedores ya se encuentran encendidos.');
     } else if (failed === 0) {
-      logger.success(`Stack iniciado correctamente (${startedCount} nuevos, ${skippedCount} ya estaban encendidos).`);
+      logger.success(`Stack iniciado correctamente (${startedCount} iniciados, ${skippedCount} ya estaban encendidos).`);
     } else {
-      logger.warn(
-        `Proceso finalizado con ${failed} error(es). Revisa los logs. Nota: Si el contenedor nunca fue creado, usa 'docker compose up -d'.`,
-      );
+      logger.warn(`Proceso finalizado con ${failed} error(es). Revisa los logs.`);
     }
   }
 }
