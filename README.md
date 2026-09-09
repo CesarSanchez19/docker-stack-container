@@ -1,6 +1,6 @@
 # 🐳 Docker Dev Stack
 
-> Entorno de desarrollo local multi-servicio orquestado con Docker Compose. Incluye bases de datos (PostgreSQL, MySQL, MongoDB), interfaz de administración (pgAdmin), contenedores de pruebas de OS (Ubuntu LTS, Kali Linux), y un proyecto de tooling en Node.js para gestión programática del stack.
+> Entorno de desarrollo local multi-servicio orquestado con Docker Compose. Incluye bases de datos (PostgreSQL, MySQL, MongoDB, Redis), interfaz de administración (pgAdmin), contenedores de pruebas de OS (Ubuntu LTS, Kali Linux), y un proyecto de tooling en Node.js para gestión programática del stack.
 
 ---
 
@@ -12,15 +12,16 @@ Este proyecto centraliza la infraestructura de desarrollo en contenedores Docker
 
 ## ⚙️ Requisitos Previos
 
-| Herramienta     | Versión Mínima | Descarga                                |
-|-----------------|----------------|-----------------------------------------|
-| Docker          | >= 24.x        | https://docs.docker.com/get-docker/     |
-| Docker Compose  | >= 2.x         | Incluido con Docker Desktop             |
-| Node.js         | >= 20.x        | https://nodejs.org (o vía nvm-windows)  |
-| pnpm            | >= 9.x         | https://pnpm.io/installation           |
-| Git             | cualquiera     | https://git-scm.com                     |
+| Herramienta    | Versión Mínima | Descarga                               |
+| -------------- | -------------- | -------------------------------------- |
+| Docker         | >= 24.x        | https://docs.docker.com/get-docker/    |
+| Docker Compose | >= 2.x         | Incluido con Docker Desktop            |
+| Node.js        | >= 20.x        | https://nodejs.org (o vía nvm-windows) |
+| pnpm           | >= 9.x         | https://pnpm.io/installation           |
+| Git            | cualquiera     | https://git-scm.com                    |
 
 > **¿Cómo verificar la instalación?**
+>
 > ```bash
 > docker --version
 > docker compose version
@@ -37,7 +38,7 @@ docker-stack-container/
 ├── docker-compose.yml           # Orquestación de todos los servicios
 ├── .env                         # Variables de entorno (no versionado)
 ├── .env.example                 # Plantilla de variables de entorno
-├── .gitattributes               # Fuerza LF en scripts .sh y .js
+├── .gitattributes               # Fuerza LF en scripts .sh, .js y .md
 ├── .dockerignore                # Evita enviar al contexto build cosas sensibles
 ├── .gitignore                   # Archivos excluidos del repositorio
 ├── stack/
@@ -45,6 +46,7 @@ docker-stack-container/
 │   │   ├── postgres/01-init.sh  # Crea usuario admin BD
 │   │   ├── mysql/01-init.sh     # Crea usuario admin BD
 │   │   ├── mongo/01-init.js     # Crea usuario admin BD
+│   │   ├── redis/01-init.sh     # Genera ACL y arranca redis-server
 │   │   ├── ubuntu/01-init.sh    # Crea usuario admin OS con Sudo
 │   │   └── kali/01-init.sh      # Crea usuario admin OS con Sudo
 │   └── tooling/                 # Proyecto Node.js para gestión del stack
@@ -66,7 +68,7 @@ docker-stack-container/
 
 Para mantener este documento conciso y proteger la privacidad de los datos operativos, toda la información detallada ha sido separada en nuestra carpeta [`docs/`](./docs/):
 
-- 🧩 **[Servicios y Arquitectura](./docs/services.md):** Detalles sobre cada base de datos (PostgreSQL, MySQL, MongoDB), sistemas operativos y pgAdmin.
+- 🧩 **[Servicios y Arquitectura](./docs/services.md):** Detalles sobre cada base de datos (PostgreSQL, MySQL, MongoDB, Redis), sistemas operativos y pgAdmin.
 - 🔧 **[Comandos Útiles (Docker)](./docs/commands.md):** Guía práctica para arrancar, detener y acceder a los contenedores vía Docker CLI.
 - 🛠️ **[Tooling Programático en Node.js](./docs/tooling.md):** Cómo utilizar nuestro gestor CLI propio (`pnpm run status`, `logs`, etc.).
 
@@ -98,11 +100,15 @@ cp .env.example .env
 ```bash
 pnpm install
 ```
+
 Después:
+
 ```bash
 docker compose up -d
 ```
+
 O:
+
 ```bash
 pnpm run start
 ```
@@ -112,17 +118,20 @@ pnpm run start
 ```bash
 pnpm status
 ```
+
 O:
+
 ```bash
 docker compose ps
 ```
+
 ---
 
 ## 🛡️ Seguridad
 
 Este proyecto implementa políticas estrictas de container security:
 
-- **Resource Limits:** Bases de datos (512M) y pgAdmin (256M) están capadas en uso de RAM. Kali (2G) y Ubuntu (1G) tienen espacio de trabajo seguro sin afectar la maquina host.
+- **Resource Limits:** Bases de datos (512M) y pgAdmin (256M) están capadas en uso de RAM. Redis opera con un `maxmemory` interno de 400MB dentro de su límite Docker de 512M. Kali (2G) y Ubuntu (1G) tienen espacio de trabajo seguro sin afectar la maquina host.
 - **Auto-Discovery .env root:** `.env` cargado vía `env_file` de forma centralizada sin hardcodear información personal (ej. correos de pgAdmin) en repositorios públicos.
 - **Log Rotations:** Cada contenedor tiene drivers `json-file` con logs limitados a max 3 archivos x 10MB previniendo ataques de volcado y denegación de servicio.
 - **No-new-privileges:** Bloqueado `security_opt: no-new-privileges:true` para BD y SO, evitando escalado de privilegios de forma nativa.

@@ -110,6 +110,17 @@ switch (container.name) {
     args.push("--authenticationDatabase", "admin");
     break;
 
+  case "redis_db":
+    args.push(
+      "redis-cli",
+      "--user",
+      stackConfig.adminUser,
+      "-a",
+      stackConfig.adminPassword,
+      "--no-auth-warning",
+    );
+    break;
+
   case "ubuntu_dev":
   case "kali_dev":
   case "php_dev":

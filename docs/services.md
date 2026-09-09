@@ -9,13 +9,14 @@ Este documento detalla los servicios y contenedores que componen el entorno de d
 
 ## 🗄️ Bases de Datos
 
-El stack provee contenedores robustos para los tres motores de bases de datos más populares. Cada uno arranca con un script de inicialización automático (`/stack/init-scripts/`) que crea la base de datos principal y asegura que las credenciales de administración se configuren de forma centralizada.
+El stack provee contenedores robustos para los cuatro motores de bases de datos más populares. Cada uno arranca con un script de inicialización automático (`/stack/init-scripts/`) que crea la base de datos principal y asegura que las credenciales de administración se configuren de forma centralizada.
 
-| Servicio       | Imagen Oficial | Puerto (Host)          | Propósito Principal                                                                          |
-| -------------- | -------------- | ---------------------- | -------------------------------------------------------------------------------------------- |
-| **PostgreSQL** | `postgres:18`  | `<tu_puerto_postgres>` | Base de datos relacional orientada a objetos (SQL). Útil para datos estructurados complejos. |
-| **MySQL**      | `mysql:8`      | `<tu_puerto_mysql>`    | Base de datos relacional de propósito general (SQL).                                         |
-| **MongoDB**    | `mongo:8`      | `<tu_puerto_mongo>`    | Base de datos NoSQL orientada a documentos. Ideal para datos no estructurados o JSON.        |
+| Servicio       | Imagen Oficial   | Puerto (Host)          | Propósito Principal                                                                          |
+| -------------- | ---------------- | ---------------------- | -------------------------------------------------------------------------------------------- |
+| **PostgreSQL** | `postgres:18`    | `<tu_puerto_postgres>` | Base de datos relacional orientada a objetos (SQL). Útil para datos estructurados complejos. |
+| **MySQL**      | `mysql:8`        | `<tu_puerto_mysql>`    | Base de datos relacional de propósito general (SQL).                                         |
+| **MongoDB**    | `mongo:8`        | `<tu_puerto_mongo>`    | Base de datos NoSQL orientada a documentos. Ideal para datos no estructurados o JSON.        |
+| **Redis**      | `redis:8-alpine` | `<tu_puerto_redis>`    | Base de datos NoSQL en memoria (caché/estructuras). Persistencia AOF habilitada.             |
 
 ---
 

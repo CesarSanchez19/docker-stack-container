@@ -58,6 +58,7 @@ Si necesitas operar dentro de los contenedores (ej. correr queries, revisar proc
 > - `pnpm run enter:postgres`
 > - `pnpm run enter:mysql`
 > - `pnpm run enter:mongo`
+> - `pnpm run enter:redis`
 > - `pnpm run enter:ubuntu`
 > - `pnpm run enter:kali`
 > - `pnpm run enter:php`
@@ -87,6 +88,12 @@ _(Pedirá tu contraseña. Ingresa la que configuraste como `ADMIN_PASSWORD`)_
 
 ```bash
 docker exec -it mongo_db mongosh -u <tu_usuario_admin> -p --authenticationDatabase admin
+```
+
+**Redis (redis-cli):**
+
+```bash
+docker exec -it redis_db redis-cli --user <tu_usuario_admin> -a <tu_contraseña_admin> --no-auth-warning
 ```
 
 ### Acceder a los Sistemas Linux (OS)
