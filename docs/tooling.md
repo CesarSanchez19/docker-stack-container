@@ -52,6 +52,7 @@ Verifica el estado de salud nativo de Docker y el log de salida de un contenedor
 | `pnpm run health:postgres` | Diagnóstico detallado del contenedor `postgres_db`. |
 | `pnpm run health:mysql`    | Diagnóstico detallado del contenedor `mysql_db`.    |
 | `pnpm run health:mongo`    | Diagnóstico detallado del contenedor `mongo_db`.    |
+| `pnpm run health:redis`    | Diagnóstico detallado del contenedor `redis_db`.    |
 | `pnpm run health:pgadmin`  | Diagnóstico detallado del contenedor `pgadmin_ui`.  |
 | `pnpm run health:php`      | Diagnóstico detallado del contenedor `php_dev`.     |
 | `pnpm run health:java`     | Diagnóstico detallado del contenedor `java_dev`.    |
@@ -69,6 +70,7 @@ Visualiza los últimos logs emitidos por un servicio en particular:
 | `pnpm run logs:postgres` | Muestra los logs del contenedor `postgres_db` (PostgreSQL). |
 | `pnpm run logs:mysql`    | Muestra los logs del contenedor `mysql_db` (MySQL).         |
 | `pnpm run logs:mongo`    | Muestra los logs del contenedor `mongo_db` (MongoDB).       |
+| `pnpm run logs:redis`    | Muestra los logs del contenedor `redis_db` (Redis).         |
 | `pnpm run logs:pgadmin`  | Muestra los logs del contenedor `pgadmin_ui` (pgAdmin).     |
 | `pnpm run logs:php`      | Muestra los logs del contenedor `php_dev` (PHP 8.3).        |
 | `pnpm run logs:java`     | Muestra los logs del contenedor `java_dev` (Java 21).       |
@@ -86,6 +88,7 @@ Enciende un contenedor que se encuentre apagado:
 | `pnpm run start:postgres` | Inicia el contenedor `postgres_db` (PostgreSQL). |
 | `pnpm run start:mysql`    | Inicia el contenedor `mysql_db` (MySQL).         |
 | `pnpm run start:mongo`    | Inicia el contenedor `mongo_db` (MongoDB).       |
+| `pnpm run start:redis`    | Inicia el contenedor `redis_db` (Redis).         |
 | `pnpm run start:pgadmin`  | Inicia el contenedor `pgadmin_ui` (pgAdmin).     |
 | `pnpm run start:ubuntu`   | Inicia el contenedor `ubuntu_dev` (Ubuntu LTS).  |
 | `pnpm run start:kali`     | Inicia el contenedor `kali_dev` (Kali Linux).    |
@@ -105,6 +108,7 @@ Detiene un contenedor activo de forma segura. **Solicita confirmación** antes d
 | `pnpm run stop:postgres` | Detiene el contenedor `postgres_db` (PostgreSQL). |
 | `pnpm run stop:mysql`    | Detiene el contenedor `mysql_db` (MySQL).         |
 | `pnpm run stop:mongo`    | Detiene el contenedor `mongo_db` (MongoDB).       |
+| `pnpm run stop:redis`    | Detiene el contenedor `redis_db` (Redis).         |
 | `pnpm run stop:pgadmin`  | Detiene el contenedor `pgadmin_ui` (pgAdmin).     |
 | `pnpm run stop:ubuntu`   | Detiene el contenedor `ubuntu_dev` (Ubuntu LTS).  |
 | `pnpm run stop:kali`     | Detiene el contenedor `kali_dev` (Kali Linux).    |
@@ -124,6 +128,7 @@ Reinicia un contenedor específico (lo detiene y lo vuelve a encender). **Solici
 | `pnpm run restart:postgres` | Reinicia el contenedor `postgres_db` (PostgreSQL). |
 | `pnpm run restart:mysql`    | Reinicia el contenedor `mysql_db` (MySQL).         |
 | `pnpm run restart:mongo`    | Reinicia el contenedor `mongo_db` (MongoDB).       |
+| `pnpm run restart:redis`    | Reinicia el contenedor `redis_db` (Redis).         |
 | `pnpm run restart:pgadmin`  | Reinicia el contenedor `pgadmin_ui` (pgAdmin).     |
 | `pnpm run restart:ubuntu`   | Reinicia el contenedor `ubuntu_dev` (Ubuntu LTS).  |
 | `pnpm run restart:kali`     | Reinicia el contenedor `kali_dev` (Kali Linux).    |
@@ -143,6 +148,7 @@ Elimina permanentemente un contenedor del sistema Docker. **Solicita confirmaci�
 | `pnpm run remove:postgres` | Elimina el contenedor `postgres_db` (PostgreSQL). |
 | `pnpm run remove:mysql`    | Elimina el contenedor `mysql_db` (MySQL).         |
 | `pnpm run remove:mongo`    | Elimina el contenedor `mongo_db` (MongoDB).       |
+| `pnpm run remove:redis`    | Elimina el contenedor `redis_db` (Redis).         |
 | `pnpm run remove:pgadmin`  | Elimina el contenedor `pgadmin_ui` (pgAdmin).     |
 | `pnpm run remove:ubuntu`   | Elimina el contenedor `ubuntu_dev` (Ubuntu LTS).  |
 | `pnpm run remove:kali`     | Elimina el contenedor `kali_dev` (Kali Linux).    |
@@ -160,17 +166,18 @@ Elimina permanentemente un contenedor del sistema Docker. **Solicita confirmaci�
 
 Inicia una sesión interactiva (shell/consola de base de datos) dentro de un contenedor. Delega la autenticación de forma segura usando las credenciales del `.env`:
 
-| Comando                   | Contenedor objetivo                  | Herramienta usada internamente |
-| ------------------------- | ------------------------------------ | ------------------------------ |
-| `pnpm run enter:postgres` | Ingresa al contenedor `postgres_db`. | `psql -U <tu_usuario>`         |
-| `pnpm run enter:mysql`    | Ingresa al contenedor `mysql_db`.    | `mysql -u <tu_usuario>`        |
-| `pnpm run enter:mongo`    | Ingresa al contenedor `mongo_db`.    | `mongosh -u <tu_usuario>`      |
-| `pnpm run enter:ubuntu`   | Ingresa al contenedor `ubuntu_dev`.  | `su - <tu_usuario>`            |
-| `pnpm run enter:kali`     | Ingresa al contenedor `kali_dev`.    | `su - <tu_usuario>`            |
-| `pnpm run enter:php`      | Ingresa al contenedor `php_dev`.     | `su - <tu_usuario>`            |
-| `pnpm run enter:java`     | Ingresa al contenedor `java_dev`.    | `su - <tu_usuario>`            |
-| `pnpm run enter:python`   | Ingresa al contenedor `python_dev`.  | `su - <tu_usuario>`            |
-| `pnpm run enter:elixir`   | Ingresa al contenedor `elixir_dev`.  | `su - <tu_usuario>`            |
+| Comando                   | Contenedor objetivo                  | Herramienta usada internamente  |
+| ------------------------- | ------------------------------------ | ------------------------------- |
+| `pnpm run enter:postgres` | Ingresa al contenedor `postgres_db`. | `psql -U <tu_usuario>`          |
+| `pnpm run enter:mysql`    | Ingresa al contenedor `mysql_db`.    | `mysql -u <tu_usuario>`         |
+| `pnpm run enter:mongo`    | Ingresa al contenedor `mongo_db`.    | `mongosh -u <tu_usuario>`       |
+| `pnpm run enter:redis`    | Ingresa al contenedor `redis_db`.    | `redis-cli --user <tu_usuario>` |
+| `pnpm run enter:ubuntu`   | Ingresa al contenedor `ubuntu_dev`.  | `su - <tu_usuario>`             |
+| `pnpm run enter:kali`     | Ingresa al contenedor `kali_dev`.    | `su - <tu_usuario>`             |
+| `pnpm run enter:php`      | Ingresa al contenedor `php_dev`.     | `su - <tu_usuario>`             |
+| `pnpm run enter:java`     | Ingresa al contenedor `java_dev`.    | `su - <tu_usuario>`             |
+| `pnpm run enter:python`   | Ingresa al contenedor `python_dev`.  | `su - <tu_usuario>`             |
+| `pnpm run enter:elixir`   | Ingresa al contenedor `elixir_dev`.  | `su - <tu_usuario>`             |
 
 _(Nota: pgAdmin no tiene soporte para `enter:` debido a que es una interfaz web)._
 
@@ -179,7 +186,7 @@ _(Nota: pgAdmin no tiene soporte para `enter:` debido a que es una interfaz web)
 >
 > - El contenedor **debe estar encendido**. Si no lo está, el script mostrará un error y te indicará el comando exacto para encenderlo.
 > - La variable `ADMIN_USER` **debe existir** en tu archivo `.env`. Si no está definida, el script abortará con un mensaje de error claro.
-> - Si `ADMIN_PASSWORD` está definida en el `.env`, la autenticación será automática (no te pedirá la clave). Si no la definiste, la herramienta nativa del contenedor (psql, mysql, mongosh) te solicitará la contraseña de forma interactiva.
+> - Si `ADMIN_PASSWORD` está definida en el `.env`, la autenticación será automática (no te pedirá la clave). Si no la definiste, la herramienta nativa del contenedor (psql, mysql, mongosh, redis-cli) te solicitará la contraseña de forma interactiva.
 
 ---
 
@@ -187,7 +194,7 @@ _(Nota: pgAdmin no tiene soporte para `enter:` debido a que es una interfaz web)
 
 Si necesitas aplicar un comando a un contenedor que no tiene un atajo directo preconfigurado, puedes pasarle el nombre exacto del contenedor como argumento al script general.
 
-Nombres de contenedores disponibles: `postgres_db`, `mysql_db`, `mongo_db`, `pgadmin_ui`, `ubuntu_dev`, `kali_dev`, `php_dev`, `java_dev`, `python_dev`, `elixir_dev`.
+Nombres de contenedores disponibles: `postgres_db`, `mysql_db`, `mongo_db`, `redis_db`, `pgadmin_ui`, `ubuntu_dev`, `kali_dev`, `php_dev`, `java_dev`, `python_dev`, `elixir_dev`.
 
 **Ejemplos:**
 
